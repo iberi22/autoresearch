@@ -1,65 +1,88 @@
-# SRC.md - autoresearch
+# SRC.md — AutoResearch
 
-## Proyecto
+> **Autonomous LLM training con nanochat - dejaba que un agente IA entrene modelos mientras dormís**
 
-- **Nombre:** autoresearch
-- **Tipo:** Autonomous AI Research Framework
-- **Descripción:** Framework de investigación autónoma de IA. Permite que un agente de IA modifique código de entrenamiento LLM de forma autónoma, entrena por 5 minutos, evalúa si mejoró, y repite.
-- **Tech Stack:** Python, PyTorch, nanochat (basado en GPT)
-- **Autor original:** Andrej Karpathy (@karpathy)
-- **Repositorio:** github.com/karpathy/autoresearch
-- **Fork:** southwest-ai-labs/autoresearch
+## 1. Concept & Vision
 
-## Estructura
+Basado en el proyecto de Andrej Karpathy. La idea: darle a un agente IA un setup de entrenamiento LLM simplificado (single-GPU) y dejarlo experimentar de forma autonoma toda la noche. Modifica el código, entrena 5 minutos, verifica si mejoró, y repite. Wake up con un log de experimentos y (esperemos) un mejor modelo.
+
+Fork de [karpathy/autoresearch](https://github.com/karpathy/autoresearch).
+
+## 2. Project Identity
+
+| Campo | Valor |
+|-------|-------|
+| **Tipo** | ML Research / Autonomous AI |
+| **Stack** | Python (nanochat) + CUDA + uv |
+| **Repo** | `E:\scripts-python\autoresearch` |
+| **Origen** | Fork de karpathy/autoresearch |
+| **Última actividad** | 25/03/2026 |
+
+## 3. Archivos Principales
 
 ```
 autoresearch/
-├── prepare.py          # Preparación de datos y tokenizer (no modificar)
-├── train.py            # Modelo GPT, optimizador, training loop (agente modifica)
-├── program.md          # Instrucciones para el agente autónomo
-├── pyproject.toml      # Dependencias (uv)
-├── uv.lock
-├── .python-version
-├── .gitignore
-├── analysis.ipynb      # Notebook de análisis
-└── progress.png        # Visualización de progreso
+├── prepare.py     # Data prep + tokenizer (NO modificar)
+├── train.py       # GPT model + optimizer + training loop (EL AGENTE MODIFICA ESTE)
+├── program.md     # Instrucciones base para el agente (HUMANO MODIFICA ESTE)
+├── pyproject.toml # Dependencias
+└── README.md
 ```
 
-## Módulos / Componentes
+## 4. Ciclo de Entrenamiento
 
-| Archivo | Rol | Modificable |
-|---------|-----|-------------|
-| `prepare.py` | Datos, tokenizer, dataloader, evaluación | ❌ No |
-| `train.py` | Modelo + optimizador + training loop | ✅ Sí (agente) |
-| `program.md` | Instrucciones del agente autónomo | ✅ Sí (humano) |
+```
+Agente_edita_train.py → entrena_5_minutos → evalua_val_bpb →
+mejora? → guarda / descarta → repite
+```
 
-## Métricas
+**Métrica:** `val_bpb` (validation bits per byte) — lower is better
 
-- **Objetivo:** Minimizar `val_bpb` (validation bits per byte)
-- **Budget:** 5 minutos por experimento (wall-clock fijo)
-- **Esperado:** ~12 experimentos/hora, ~100 mientras duermes
+**Budget:** 5 minutos exactos por corrida (comparable entre experimentos)
 
-## Diseño Clave
+## 5. Stack Técnico
 
-1. **Un solo archivo editable por el agente** (`train.py`) — difs manejables
-2. **Time budget fijo** — resultados comparables entre cambios de arquitectura
-3. **Self-contained** — sin dependencias externas complejas
+- **Modelo base:** nanochat (GPT simplificado)
+- **Optimizer:** Muon + AdamW
+- **Tokenizador:** BPE custom
+- **Plataforma:** Single NVIDIA GPU (testeado en H100)
+- **Gestor:** uv (Astral)
 
-## Integración SWAL
+## 6. Parámetros Principales (train.py)
 
-Este proyecto puede ser usado para:
-- Finetuning autónomo de modelos
-- Experimentación acelerada de arquitecturas
-- Búsqueda de hiperparámetros automáticos
+| Parámetro | Default | Descripción |
+|-----------|---------|-------------|
+| `DEPTH` | 8 | Capas del transformer |
+| `MAX_SEQ_LEN` | 1024 | Longitud de secuencia |
+| `VOCAB_SIZE` | 8192 | Tamaño de vocabulario |
+| `DEVICE_BATCH_SIZE` | — | Batch por dispositivo |
+| `TOTAL_BATCH_SIZE` | 2^19 | Batch total |
+| `WINDOW_PATTERN` | "SSSL" | Pattern de atención |
 
-## Estado
+## 7.Estado
 
-- ✅ Fork activo de SWAL
-- 🧪 Experimental
+| Aspecto | Estado |
+|---------|--------|
+| Baseline nanochat | ✅ Funcional |
+| Agente autónomo (Claude/Codex) | 🔜 Configurar |
+| Plataforma GPU | ⚠️ Requiere NVIDIA GPU |
+| Forks existentes | ✅ MacOS, MLX, Windows RTX |
 
-## Referencias
+## 8. Acciones Pendientes
 
-- Repo original: https://github.com/karpathy/autoresearch
-- Forks notables: macOS, MLX, Windows RTX
+- [ ] Configurar uv y dependencias
+- [ ] Correr `prepare.py` (descarga datos + entrena tokenizer)
+- [ ] Correr `train.py` manualmente para validar setup
+- [ ] Configurar agente (Codex/Claude) con `program.md`
+- [ ] Dejar corriendo overnight
 
-*Última actualización: 2026-03-23*
+## 9. TOGAF
+
+- **Visión:** Pipeline de investigación autónoma para LLMs
+- **Dominio:** ML Research / Autonomous AI
+- **Arquitectura:** Single-file training loop + Markdown prompts
+- **Stakeholder:** SWAL Labs (Bel)
+
+---
+
+*Actualizado: 2026-03-25 por GitCore Monitor*
